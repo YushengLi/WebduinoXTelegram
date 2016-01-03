@@ -40,12 +40,19 @@ board.on('ready', function() {
   const servo = new Webduino.module.Servo(board, board.getDigitalPin(Settings.Webduino.Servo.DigitalPin));
 
   const photocell = new Webduino.module.Photocell(board, Settings.Webduino.Photocell.AnalogPin);
+  const moisture  = new Webduino.module.Photocell(board, Settings.Webduino.Moisture.AnalogPin);
 
   var photocellTrans = 0;
+  var moistureTrans  = 0;
 
   photocell.on(function(val) {
     photocell.detectedVal = val;
     photocellTrans = (Math.round((((photocell.detectedVal - (0)) * (1/((1)-(0)))) * ((100)-(0)) + (0))*100))/100;
+  });
+
+  moisture.on(function(val) {
+  	moisture.detectedVal = val;
+  	moistureTrans = (Math.round((((moisture.detectedVal - (0)) * (1/((1)-(0)))) * ((1023)-(0)) + (0))*100))/100;
   });
 
   bot.start().catch(function(err) {
@@ -160,9 +167,19 @@ board.on('ready', function() {
 
 	    		break;
 	    	
-	    	case "植物狀態":	
+	    	case "植物狀態":
+	    		if(moistureTrans >= 1000) {
+	    			moistness = "‼️感測器未連接或是不在土裡"; 
+	    		} else if (moistureTrans < 1000 && moistureTrans >= 600) {
+	    			moistness = "❗土是乾的";
+	    		} else if (moistureTrans < 600 && moistureTrans >= 370) {
+	    			moistness = "💧土壤濕度正常";
+	    		} else if (moistureTrans < 370) {
+	    			moistness = "💦土是濕的";
+	    		}
+
 	    		lightness = (photocellTrans < 50) ? "🌞亮" : "❗️暗"		    
-			    var msg = new Message().to(id).text(lightness+ "\n光度：" +photocellTrans).keyboard(nonKeyboard);
+			    var msg = new Message().to(id).text(lightness+ "\n光度：" +photocellTrans+ "\n" +moistness+"\n土壤濕度："+moistureTrans).keyboard(nonKeyboard);
 			    bot.send(msg);
 	    		break;
 
